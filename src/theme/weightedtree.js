@@ -10,7 +10,7 @@ vizuly.theme.weighted_tree = function (viz) {
         "Axiis" : {
             name: "Axiis",                          // Skin Name
             label_color: "#333",                    // Color of the center label
-            link_colors: ["#bd0026", "#fecc5c", "#fd8d3c", "#f03b20", "#B02D5D",
+            link_colors: ["#0baf03", "#fecc5c", "#fd8d3c", "#f03b20", "#B02D5D",
                 "#9B2C67", "#982B9A", "#692DA7", "#5725AA", "#4823AF",
                 "#d7b5d8", "#dd1c77", "#5A0C7A", "#5A0C7A"],
             link_stroke: function (d, i) {
@@ -143,7 +143,7 @@ vizuly.theme.weighted_tree = function (viz) {
     function setLinkColor(node) {
         if (!viz.children()(node)) return;
         viz.children()(node).forEach(function (child) {
-            child.vz_link_color = node.vz_link_color;
+            child.vz_link_color = rgb(238, 98, 233);
             setLinkColor(child);
         })
     }
@@ -282,4 +282,3 @@ vizuly.skin.WEIGHTED_TREE_AXIIS = "Axiis";
  CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  IN THE SOFTWARE.
  */
-

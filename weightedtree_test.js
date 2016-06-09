@@ -201,7 +201,7 @@ function onMouseOver(e,d,i) {
     if (d == data) return;
     var rect = e.getBoundingClientRect();
     if (d.target) d = d.target; //This if for link elements
-    createDataTip(rect.left, rect.top, (d.key || (d['Level' + d.depth])), formatCurrency(d["agg_" + valueField]),valueField);
+    createDataTip(rect.left, rect.top, (d.key || (d['Level' + d.depth])), formatCurrency(d["agg_" + valueField]),"Apple Inc (AAPL) Supplier");
 
 
 }
@@ -238,15 +238,3 @@ function changeSize(val) {
     viz_container.transition().duration(300).style('width', s[0] + 'px').style('height', s[1] + 'px');
     viz.width(s[0]).height(s[1]*.8).update();
 }
-
-//This sets the same value for each radial progress
-function changeData(val) {
-    valueField=valueFields[Number(val)];
-    viz.update();
-}
-
-
-
-
-
-
