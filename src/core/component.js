@@ -18,37 +18,63 @@
  IN THE SOFTWARE.
  */
 
-// @version 1.1.20
+// @version 1.1.54
 
-// The component.create function is the base function that creates a psuedo class for all vizuly components.  It gets called
-// by all vizuly components at instantiation and handles all of the boilerplate construction methods needed to create an
-// encapsulated function chained vizuly object.  This is the work horse of vizuly.
-//
-// Here is what id does:
-//
-// 1. It appends a DIV tag to the parent DOM element being passed in.
-// 2. It takes a 'scope' variable that it will use to attach psuedo protected properties to - to be accessed by the component
-// 3. It takes an array of 'props' objects (an array of  name:value objects)  that is uses to create protected variables on the 'scope' object.
-// 4. It implements a d3.disptach event handler that emits events on any property changes declared in the 'props' array.
-// 5. It creates a set of interaction events that can be used by the components scope.disptach object.
-// 6. It takes in any custom component 'events' as an array and adds those to the scope.disptach as well.
-//
 
-vizuly.component = {};  //Consider moving to core/_core.js  to normalize
-
-vizuly.component.create = function(parent,scope,props,events) {
+/**
+ * This class is the work horse of all vizuly.core.components.  Each vizuly.core.component implements this class to create a standard vizuly object.   This class is only used by developers creating their own vizuly.core.components.
+ *
+ * The input parameters defined below are used to create a self contained function chained object with public accessors, protected properties, and event emitters.
+ * A container DOM element (HTML DIV Element) is also created and appended to the parent element for subsequent rendering by the vizuly.core.component implementing this class.
+ *
+ *  * The following events for common UI interactions will automatically be created:
+ *
+ *  *mouseover, mouseout, mousedown, click, dblclick, touch, zoom, zoomstart, zoomend*
+ *
+ * * The following events for the component lifecycle will be automatically created:
+ *
+ *  *initialize, validate, measure, update*
+ *
+ * * For each public property passed in via the *props* param, a data change event will be created in the following format
+ *   *propName_change*
+ *
+ * @class
+ * @constructor
+ * @param {DOMElement} parent - DOM Element that the component DIV Element will be appended to.
+ * @param {Object} scope - This object is passed into the constructor and will be populated with the dynamically generated accessors, properties, and event dispatcher.  The *scope* object is what component developers use internall to their components to access all protected properties, methods, and events.
+ * @param {Array} props - An array of strings (*['propertyA', 'propertyB', 'propertyC']*) representing all public accessors with associated protected properties (*scope.propertyA*)
+ * @param {Array} events - An array of strings (*['customEventA', 'customEventB', 'customEventC']*) representing any custom events that the component will emit via *scope.dispatch*
+ *
+ * @fires mouseover
+ * @fires mouseout
+ * @fires mousedown
+ * @fires click
+ * @fires dblclick
+ * @fires touch
+ * @fires zoom
+ * @fires zoomstart
+ * @fires zoomend
+ *
+ * @fires initialize
+ * @fires validate
+ * @fires measure
+ * @fires update
+ *
+ * @fires prop_change
+ */
+vizuly.core.component = function(parent,scope,props,events) {
 
     //We set the primary scope properties
     scope.parent = parent;
     scope.properties = props;
-    scope.id = vizuly.util.guid();
+    scope.id = vizuly.core.util.guid();
     scope.selection = d3.select(parent).append("div").attr("id","div_" + scope.id).style("width","100%").style("height","100%");
 
     // Adding our dispatch event that the viz will use for any attached callbacks.
     var args=[];
 
     // Interaction events
-    args.push("mouseover");
+    args.push("mouseover")
     args.push("mouseout");
     args.push("mousedown");
     args.push("click");
@@ -58,7 +84,7 @@ vizuly.component.create = function(parent,scope,props,events) {
     args.push("zoomstart");
     args.push("zoomend");
 
-    //Core events
+    // Core events
     args.push("initialize");
     args.push("validate");
     args.push("measure");
@@ -81,15 +107,8 @@ vizuly.component.create = function(parent,scope,props,events) {
     // For more info on dispatch, see here: https://github.com/mbostock/d3/wiki/Internals#d3_dispatch
     scope.dispatch = d3.dispatch.apply(this,args);
 
-    //This is our primary constructor that sets all properties
-    var component = function () {
-        setProps(component,scope,scope.properties);
-        return component;
-    };
-
-
     //For each property in our 'props' array create a callback if the property value has changed.
-    setProps = function(component,scope,props) {
+    function setProps(component,scope,props) {
         Object.getOwnPropertyNames(props).forEach(function (val, idx, array) {
             if (typeof (scope[val]) == "undefined") {
                 scope[val] = props[val];
@@ -110,24 +129,48 @@ vizuly.component.create = function(parent,scope,props,events) {
         });
     };
 
-    // This is the unique id for the component - most components use this in createing a unique DOM element id.
+    var component = function () {
+        setProps(component,scope,scope.properties);
+        return component;
+    };
+
+    //Attach our component to the disptach object so we have it later on any event
+    scope.dispatch.component = component();
+
+    /**
+     *  Returns a unique identifier that has been auto generated at instantiation.
+     *  @memberOf vizuly.core.component
+     */
     component.id = function () {
         return scope.id;
     }
 
-    // This returns the DIV element unique to the component and created at instantiation
+    /**
+     *  Returns the D3 selection of component DIV container.
+     *  @memberOf vizuly.core.component
+     */
     component.selection = function () {
         return scope.selection;
     };
 
-    // This function is used to bind all callbacks to any events emitted by the dispatch object
+    /**
+     * This method accepts the following two parameters which allow you to capture any component generated events.
+     *  @memberOf vizuly.core.component
+     *  @function
+     *  @param {String} event of event to be listened for
+     *  @param {Function} listener function used to capture emited event
+     */
     component.on = function (event,listener) {
         scope.dispatch.on(event,listener);
         return component;
     };
 
-    // This function validates that all object properties have been set
-    // Typically it is called each time the component calls its "measure" function.
+    /**
+     *  Validates that all public properties (passed in *props* param) have non null values.
+     *
+     *  This method is usually called internally from a vizuly.core.component.
+     *  @memberOf vizuly.core.component
+     */
     component.validate = function () {
         if (invalid) return;
 
@@ -138,16 +181,12 @@ vizuly.component.create = function(parent,scope,props,events) {
             }
         })
         if (invalid.length > 0) {
-            throw new Error("vizuly.util.component.validate(): " + invalid.concat() + " need to be declared");
+            throw new Error("vizuly.core.util.component.validate(): " + invalid.concat() + " need to be declared");
         }
 
         //We disptach a 'validate' event so we can hook in callbacks before other work is done.
         scope.dispatch.validate();
-
     }
-
-    //Attach our component to the disptach object so we have it later on any event
-    scope.dispatch.component = component();
 
     //Return our finished component.
     return scope.dispatch.component;
